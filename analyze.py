@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
 import os
 import csv
 import glob
@@ -144,11 +145,10 @@ def run_analysis(series_name, groups, sorted_groups):
         group_stdevs[group] = avg_std
         print(f"{group} avg stdev: {avg_std:.6e} V")
 
-    # ── Linear fit: stdev vs cable length (per-file data) ──
+    # ── Fit: sigma = sqrt(a^2 + b^2 * L^2) ──
     lengths_grp = np.array([int(re.match(r"(\d+)", g).group(1)) for g in sorted_groups])
     stdevs_grp = np.array([group_stdevs[g] for g in sorted_groups])
 
-    # Use all individual files for proper uncertainty
     lengths_all = []
     stdevs_all = []
     for group in sorted_groups:
@@ -160,82 +160,110 @@ def run_analysis(series_name, groups, sorted_groups):
     lengths_all = np.array(lengths_all)
     stdevs_all = np.array(stdevs_all)
 
-    coeffs, cov = np.polyfit(lengths_all, stdevs_all, 1, cov=True)
-    slope, intercept = coeffs
-    slope_err = np.sqrt(cov[0, 0])
-    intercept_err = np.sqrt(cov[1, 1])
+    def model(L, a, b):
+        return np.sqrt(a**2 + b**2 * L**2)
 
-    ss_res = np.sum((stdevs_all - (slope * lengths_all + intercept)) ** 2)
+    p0 = [stdevs_all.min(), 1e-6]
+    popt, pcov = curve_fit(model, lengths_all, stdevs_all, p0=p0)
+    a, b = popt
+    a_err, b_err = np.sqrt(np.diag(pcov))
+
+    ss_res = np.sum((stdevs_all - model(lengths_all, a, b)) ** 2)
     ss_tot = np.sum((stdevs_all - np.mean(stdevs_all)) ** 2)
     r_squared = 1 - ss_res / ss_tot
 
-    print(f"\nLinear fit (N={len(stdevs_all)} points):")
-    print(f"  slope     = ({slope:.6e} ± {slope_err:.6e}) V/cm")
-    print(f"  intercept = ({intercept:.6e} ± {intercept_err:.6e}) V")
+    print(f"\nFit: sigma = sqrt(a² + b²L²)  (N={len(stdevs_all)} points)")
+    print(f"  a = ({a:.6e} ± {a_err:.6e}) V")
+    print(f"  b = ({b:.6e} ± {b_err:.6e}) V/cm")
     print(f"  R² = {r_squared:.6f}")
 
     fit_x = np.linspace(lengths_grp.min() * 0.9, lengths_grp.max() * 1.1, 100)
-    fit_y = slope * fit_x + intercept
+    fit_y = model(fit_x, a, b)
 
     plt.figure(figsize=(8, 5))
     plt.scatter(lengths_all, stdevs_all * 1e3, alpha=0.5, s=20, label="Individual files")
     plt.scatter(lengths_grp, stdevs_grp * 1e3, zorder=5, s=60, marker='D', label="Group avg")
     plt.plot(fit_x, fit_y * 1e3, 'r--',
-             label=f"Fit: ({slope*1e6:.2f}±{slope_err*1e6:.2f}) μV/cm (R²={r_squared:.4f})")
+             label=f"$\\sqrt{{a^2+b^2 L^2}}$: a={a*1e3:.3f}mV, b={b*1e6:.2f}μV/cm (R²={r_squared:.4f})")
     plt.xlabel("Cable length (cm)")
     plt.ylabel("Stdev (mV)")
-    plt.title(f"Noise (stdev) vs Cable Length [{series_name}]")
+    plt.title(f"Noise vs Cable Length [{series_name}]")
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.savefig(os.path.join(IMG_DIR, f"{img_prefix}stdev_vs_length.png"), dpi=150)
     plt.close()
 
-    return results, group_stdevs, slope, slope_err, intercept, intercept_err
+    return results, group_stdevs, a, a_err, b, b_err
 
 
-# ── Run for base series (no prefix) ──
-groups_base, sorted_base = discover_groups("*cm-*.txt", r"^(\d+cm)-(\d+)$")
-results_base, gstd_base, slope_base, slope_base_err, int_base, int_base_err = \
-    run_analysis("base", groups_base, sorted_base)
+# ── Auto-detect all series by prefix ──
+all_files = glob.glob(os.path.join(BASE_DIR, "*cm-*.txt"))
+prefixes = set()
+for fpath in all_files:
+    fname = os.path.splitext(os.path.basename(fpath))[0]
+    m = re.match(r"^(.*?)(\d+cm)-(\d+)$", fname)
+    if m:
+        prefixes.add(m.group(1))
 
-# ── Run for 1M_ series ──
-groups_1m, sorted_1m = discover_groups("1M_*cm-*.txt", r"^1M_(\d+cm)-(\d+)$")
-if sorted_1m:
-    results_1m, gstd_1m, slope_1m, slope_1m_err, int_1m, int_1m_err = \
-        run_analysis("1M", groups_1m, sorted_1m)
+# Sort prefixes: "" first, then by numeric part (1M_, 10M_, ...)
+def prefix_sort_key(p):
+    if p == "":
+        return (0, "")
+    m = re.match(r"(\d+)", p)
+    return (int(m.group(1)), p) if m else (999, p)
 
-    # ── Z-test: base vs 1M ──
+sorted_prefixes = sorted(prefixes, key=prefix_sort_key)
+
+series_results = {}
+for prefix in sorted_prefixes:
+    series_name = prefix.rstrip("_") if prefix else "base"
+    if prefix:
+        pattern = f"{prefix}*cm-*.txt"
+        regex = rf"^{re.escape(prefix)}(\d+cm)-(\d+)$"
+    else:
+        pattern = "*cm-*.txt"
+        regex = r"^(\d+cm)-(\d+)$"
+    groups, sorted_g = discover_groups(pattern, regex)
+    if sorted_g:
+        res = run_analysis(series_name, groups, sorted_g)
+        series_results[series_name] = {
+            "results": res[0], "gstd": res[1],
+            "a": res[2], "a_err": res[3], "b": res[4], "b_err": res[5],
+            "groups": groups, "sorted_groups": sorted_g,
+        }
+
+# ── Z-test: all pairs ──
+series_names = list(series_results.keys())
+if len(series_names) >= 2:
     print(f"\n{'='*60}")
-    print(f" Z-test: base vs 1M")
+    print(f" Z-tests [sigma = sqrt(a² + b²L²)]")
     print(f"{'='*60}")
-    for name, v1, e1, v2, e2 in [
-        ("slope", slope_base, slope_base_err, slope_1m, slope_1m_err),
-        ("intercept", int_base, int_base_err, int_1m, int_1m_err),
-    ]:
-        z = (v1 - v2) / np.sqrt(e1**2 + e2**2)
-        print(f"\n  {name}:")
-        print(f"    base = {v1:.6e} ± {e1:.6e}")
-        print(f"    1M   = {v2:.6e} ± {e2:.6e}")
-        print(f"    z = {z:.4f},  |z| = {abs(z):.4f}  {'(p<0.05, significant)' if abs(z) > 1.96 else '(not significant)'}")
-else:
-    results_1m, gstd_1m = [], {}
+    for i in range(len(series_names)):
+        for j in range(i + 1, len(series_names)):
+            s1, s2 = series_names[i], series_names[j]
+            d1, d2 = series_results[s1], series_results[s2]
+            print(f"\n  --- {s1} vs {s2} ---")
+            for name in ["a", "b"]:
+                v1, e1 = d1[name], d1[f"{name}_err"]
+                v2, e2 = d2[name], d2[f"{name}_err"]
+                z = (v1 - v2) / np.sqrt(e1**2 + e2**2)
+                sig = "(p<0.05)" if abs(z) > 1.96 else "(not sig.)"
+                print(f"    {name}: {v1:.4e}±{e1:.4e} vs {v2:.4e}±{e2:.4e}  z={z:.3f} {sig}")
 
 # ── Write combined statistics.csv ──
 csv_path = os.path.join(BASE_DIR, "statistics.csv")
 with open(csv_path, "w", newline="") as f:
     writer = csv.writer(f)
     writer.writerow(["series", "label", "mean", "stdev"])
-    for r in results_base:
-        writer.writerow(["base", r["label"], r["mean"], r["stdev"]])
-    for r in results_1m:
-        writer.writerow(["1M", r["label"], r["mean"], r["stdev"]])
+    for sname in series_names:
+        for r in series_results[sname]["results"]:
+            writer.writerow([sname, r["label"], r["mean"], r["stdev"]])
     writer.writerow([])
     writer.writerow(["series", "group", "avg_stdev"])
-    for g in sorted_base:
-        writer.writerow(["base", g, gstd_base[g]])
-    for g in sorted_1m:
-        writer.writerow(["1M", g, gstd_1m[g]])
+    for sname in series_names:
+        for g in series_results[sname]["sorted_groups"]:
+            writer.writerow([sname, g, series_results[sname]["gstd"][g]])
 
 print(f"\nSaved plots to {IMG_DIR}")
 print(f"Saved statistics to {csv_path}")
