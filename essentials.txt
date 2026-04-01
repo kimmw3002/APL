@@ -1,0 +1,8 @@
+gain 10^7 V/A
+cutoff 100khz
+
+filter 1khz
+
+s/div 5E-5
+V/div 0.0005
+samples 1000
