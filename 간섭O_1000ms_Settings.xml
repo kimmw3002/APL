@@ -1,0 +1,211 @@
+<?xml version='1.0' standalone='yes' ?>
+<LVData xmlns="http://www.ni.com/LVData">
+<Version>25.3.3f3</Version>
+<Cluster>
+<Name>EDU-QOP1 settings</Name>
+<NumElts>4</NumElts>
+<Cluster>
+<Name>TimeTagger settings</Name>
+<NumElts>5</NumElts>
+<DBL>
+<Name>Coincidence Window</Name>
+<Val>5.00000000000000E-9</Val>
+</DBL>
+<DBL>
+<Name>Delay A to T</Name>
+<Val>-1.60000000000000E-9</Val>
+</DBL>
+<DBL>
+<Name>Delay B to T</Name>
+<Val>-1.80000000000000E-9</Val>
+</DBL>
+<DBL>
+<Name>Delay C to T</Name>
+<Val>0.00000000000000</Val>
+</DBL>
+<EW>
+<Name>Coincidence mode</Name>
+<Choice>Triple Coincidences</Choice>
+<Choice>Gated Counting</Choice>
+<Choice>Coincidences of Coincidences</Choice>
+<Val>2</Val>
+</EW>
+</Cluster>
+<Cluster>
+<Name>Laser settings</Name>
+<NumElts>4</NumElts>
+<EW>
+<Name>Laser Operation mode</Name>
+<Choice>Constant Current (mA)</Choice>
+<Choice>Constant Power (mW)</Choice>
+<Val>0</Val>
+</EW>
+<DBL>
+<Name>Laser Strength</Name>
+<Val>45.00000000000000</Val>
+</DBL>
+<Boolean>
+<Name>Lock KLD Front Panel</Name>
+<Val>0</Val>
+</Boolean>
+<Boolean>
+<Name>Switch Laser on/off automatically</Name>
+<Val>0</Val>
+</Boolean>
+</Cluster>
+<Cluster>
+<Name>Software</Name>
+<NumElts>5</NumElts>
+<Boolean>
+<Name>Save settings on exit</Name>
+<Val>1</Val>
+</Boolean>
+<Boolean>
+<Name>Save screenshot with data</Name>
+<Val>1</Val>
+</Boolean>
+<String>
+<Name>Software Version</Name>
+<Val>1.1.0.7</Val>
+</String>
+<String>
+<Name>Kinesis Version</Name>
+<Val>1.14.47.22504</Val>
+</String>
+<String>
+<Name>TimeTagger Lab Version</Name>
+<Val>2.17.4</Val>
+</String>
+</Cluster>
+<Cluster>
+<Name>Experiments</Name>
+<NumElts>8</NumElts>
+<Cluster>
+<Name>GRA</Name>
+<NumElts>1</NumElts>
+<DBL>
+<Name>Measurement Time</Name>
+<Val>60.00000000000000</Val>
+</DBL>
+</Cluster>
+<Cluster>
+<Name>HBT</Name>
+<NumElts>1</NumElts>
+<DBL>
+<Name>Measurement Time</Name>
+<Val>60.00000000000000</Val>
+</DBL>
+</Cluster>
+<Cluster>
+<Name>Michelson Settings</Name>
+<NumElts>6</NumElts>
+<DBL>
+<Name>Integration Time</Name>
+<Val>1.00000000000000</Val>
+</DBL>
+<DBL>
+<Name>Stage Start Position</Name>
+<Val>5.50000000000000E-6</Val>
+</DBL>
+<DBL>
+<Name>Stage Stop Position</Name>
+<Val>1.00000000000000E-5</Val>
+</DBL>
+<DBL>
+<Name>Step Width</Name>
+<Val>2.00000000000000E-8</Val>
+</DBL>
+<EW>
+<Name>Wait for Trigger Mode</Name>
+<Choice>No</Choice>
+<Choice>After Data Point</Choice>
+<Choice>Before Data Point</Choice>
+<Val>0</Val>
+</EW>
+<DBL>
+<Name>Trigger Pulse Length</Name>
+<Val>1.00000000000000E-3</Val>
+</DBL>
+</Cluster>
+<Cluster>
+<Name>Delay Settings</Name>
+<NumElts>4</NumElts>
+<DBL>
+<Name>Detector Delay Start</Name>
+<Val>-1.00000000000000E-8</Val>
+</DBL>
+<DBL>
+<Name>Detector Delay End</Name>
+<Val>1.00000000000000E-8</Val>
+</DBL>
+<DBL>
+<Name>Step Width</Name>
+<Val>2.00000000000000E-10</Val>
+</DBL>
+<DBL>
+<Name>Measurement time</Name>
+<Val>0.30000000000000</Val>
+</DBL>
+</Cluster>
+<Cluster>
+<Name>Malus</Name>
+<NumElts>1</NumElts>
+<DBL>
+<Name>Measurement Time</Name>
+<Val>20.00000000000000</Val>
+</DBL>
+</Cluster>
+<Cluster>
+<Name>KDC Stage Settings</Name>
+<NumElts>7</NumElts>
+<DBL>
+<Name>Integration Time</Name>
+<Val>0.30000000000000</Val>
+</DBL>
+<DBL>
+<Name>Stage Start Position</Name>
+<Val>0.00000000000000</Val>
+</DBL>
+<DBL>
+<Name>Stage Stop Position</Name>
+<Val>12.00000000000000</Val>
+</DBL>
+<DBL>
+<Name>Step Width</Name>
+<Val>20.00000000000000</Val>
+</DBL>
+<EW>
+<Name>Wait for Trigger Mode</Name>
+<Choice>No</Choice>
+<Choice>After Data Point</Choice>
+<Choice>Before Data Point</Choice>
+<Val>0</Val>
+</EW>
+<DBL>
+<Name>Trigger Pulse Length</Name>
+<Val>1.00000000000000E-3</Val>
+</DBL>
+<U16>
+<Name>Stage</Name>
+<Val>0</Val>
+</U16>
+</Cluster>
+<Cluster>
+<Name>Bell</Name>
+<NumElts>1</NumElts>
+<DBL>
+<Name>Measurement Time</Name>
+<Val>10.00000000000000</Val>
+</DBL>
+</Cluster>
+<Cluster>
+<Name>State Tomography</Name>
+<NumElts>1</NumElts>
+<DBL>
+<Name>Measurement Time</Name>
+<Val>10.00000000000000</Val>
+</DBL>
+</Cluster>
+</Cluster>
+</Cluster>
+</LVData>
