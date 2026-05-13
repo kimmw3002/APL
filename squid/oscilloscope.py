@@ -18,6 +18,7 @@ import time
 import sys
 import os
 from datetime import datetime
+from itertools import combinations
 
 SAVE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -29,7 +30,8 @@ SAVE_DIR = os.path.dirname(os.path.abspath(__file__))
 # LAN 연결 예시: "TCPIP0::192.168.1.100::INSTR"
 VISA_ADDRESS = "USB0::0x1AB1::0x044C::DHO9S254703475::INSTR"
 
-CHANNELS = (1, 2)     # 캡처할 채널 (Ch1=A, Ch2=V, XY: X=Ch1, Y=Ch2)
+CHANNELS = (1, 2, 3)  # 캡처할 채널
+CH_UNITS = {1: "A", 2: "V", 3: "V"}  # 채널별 단위 (필요 시 수정)
 WAV_MODE = "NORMal"   # NORMal: 화면 포인트, RAW: 메모리 전체, MAXimum: 자동
 WAV_FORMAT = "BYTE"   # BYTE: 8bit, WORD: 16bit(12bit 정밀도), ASCii: 텍스트
 START_POINT = 1       # 읽기 시작점
@@ -231,34 +233,58 @@ def _apply_dark_style():
         spine.set_color('#444')
 
 
-def plot_waveform(time_arr, i1, v2, filename="waveform.png"):
-    """Ch1(A) / Ch2(V) 시간 파형을 twin-y 로 겹쳐 그립니다."""
+CH_COLORS = {1: '#FFD700', 2: '#00CED1', 3: '#FF6B9D', 4: '#90EE90'}
+
+
+def plot_waveform(time_arr, channel_data, channel_units, filename="waveform.png"):
+    """채널별 시간 파형을 단위별 twin-y 로 겹쳐 그립니다."""
     t_scale, t_unit = _auto_scale(abs(time_arr[-1] - time_arr[0]), "T")
-    a_scale, a_unit = _auto_scale(max(abs(i1.min()), abs(i1.max())), "A")
-    v_scale, v_unit = _auto_scale(max(abs(v2.min()), abs(v2.max())), "V")
+
+    by_unit = {}
+    for ch, data in channel_data.items():
+        u = channel_units[ch]
+        by_unit.setdefault(u, []).append((ch, data))
+    units = list(by_unit.keys())
 
     fig, ax1 = plt.subplots(figsize=(12, 5))
     fig.set_facecolor('#16213e')
     ax1.set_facecolor('#1a1a2e')
 
-    l1, = ax1.plot(time_arr * t_scale, i1 * a_scale, linewidth=0.8, color='#FFD700', label=f'Ch1 ({a_unit})')
+    lines = []
+
+    u1 = units[0]
+    u1_max = max(max(abs(d.min()), abs(d.max())) for _, d in by_unit[u1])
+    s1, l1u = _auto_scale(u1_max, u1)
+    first_color = CH_COLORS.get(by_unit[u1][0][0], '#FFD700')
+    for ch, data in by_unit[u1]:
+        c = CH_COLORS.get(ch, '#FFFFFF')
+        ln, = ax1.plot(time_arr * t_scale, data * s1, linewidth=0.8, color=c, label=f'Ch{ch} ({l1u})')
+        lines.append(ln)
     ax1.set_xlabel(f"Time ({t_unit})", fontsize=12, color='white')
-    ax1.set_ylabel(f"Ch1 Current ({a_unit})", fontsize=12, color='#FFD700')
+    ax1.set_ylabel(f"{u1} ({l1u})", fontsize=12, color=first_color)
     ax1.tick_params(axis='x', colors='white')
-    ax1.tick_params(axis='y', colors='#FFD700')
+    ax1.tick_params(axis='y', colors=first_color)
     ax1.grid(True, alpha=0.3)
     for spine in ax1.spines.values():
         spine.set_color('#444')
 
-    ax2 = ax1.twinx()
-    l2, = ax2.plot(time_arr * t_scale, v2 * v_scale, linewidth=0.8, color='#00CED1', label=f'Ch2 ({v_unit})')
-    ax2.set_ylabel(f"Ch2 Voltage ({v_unit})", fontsize=12, color='#00CED1')
-    ax2.tick_params(axis='y', colors='#00CED1')
-    for spine in ax2.spines.values():
-        spine.set_color('#444')
+    if len(units) > 1:
+        u2 = units[1]
+        u2_max = max(max(abs(d.min()), abs(d.max())) for _, d in by_unit[u2])
+        s2, l2u = _auto_scale(u2_max, u2)
+        ax2 = ax1.twinx()
+        second_color = CH_COLORS.get(by_unit[u2][0][0], '#00CED1')
+        for ch, data in by_unit[u2]:
+            c = CH_COLORS.get(ch, '#FFFFFF')
+            ln, = ax2.plot(time_arr * t_scale, data * s2, linewidth=0.8, color=c, label=f'Ch{ch} ({l2u})')
+            lines.append(ln)
+        ax2.set_ylabel(f"{u2} ({l2u})", fontsize=12, color=second_color)
+        ax2.tick_params(axis='y', colors=second_color)
+        for spine in ax2.spines.values():
+            spine.set_color('#444')
 
-    plt.title("DHO924S - Ch1 (A) / Ch2 (V) Waveform", fontsize=14, color='white')
-    ax1.legend([l1, l2], [l1.get_label(), l2.get_label()],
+    plt.title("DHO924S Waveform", fontsize=14, color='white')
+    ax1.legend(lines, [ln.get_label() for ln in lines],
                facecolor='#1a1a2e', edgecolor='#444', labelcolor='white', loc='best')
     plt.tight_layout()
     plt.savefig(filename, dpi=150, facecolor='#16213e')
@@ -266,17 +292,17 @@ def plot_waveform(time_arr, i1, v2, filename="waveform.png"):
     print(f"그래프 저장: {filename}")
 
 
-def plot_xy(i1, v2, filename="waveform_xy.png"):
-    """XY 플롯: x=Ch1 (A), y=Ch2 (V)."""
-    a_scale, a_unit = _auto_scale(max(abs(i1.min()), abs(i1.max())), "A")
-    v_scale, v_unit = _auto_scale(max(abs(v2.min()), abs(v2.max())), "V")
+def plot_xy(x_arr, y_arr, x_ch, y_ch, x_unit, y_unit, filename="waveform_xy.png"):
+    """XY scatter: x=Ch{x_ch}, y=Ch{y_ch}."""
+    x_scale, x_lbl = _auto_scale(max(abs(x_arr.min()), abs(x_arr.max())), x_unit)
+    y_scale, y_lbl = _auto_scale(max(abs(y_arr.min()), abs(y_arr.max())), y_unit)
 
     plt.figure(figsize=(7, 7))
-    plt.scatter(i1 * a_scale, v2 * v_scale, s=4, color='#FF6B9D', alpha=0.7, edgecolors='none')
+    plt.scatter(x_arr * x_scale, y_arr * y_scale, s=4, color='#FF6B9D', alpha=0.7, edgecolors='none')
     _apply_dark_style()
-    plt.xlabel(f"Ch1 ({a_unit})", fontsize=12, color='white')
-    plt.ylabel(f"Ch2 ({v_unit})", fontsize=12, color='white')
-    plt.title("DHO924S - XY Plot (X=Ch1 [A], Y=Ch2 [V])", fontsize=14, color='white')
+    plt.xlabel(f"Ch{x_ch} ({x_lbl})", fontsize=12, color='white')
+    plt.ylabel(f"Ch{y_ch} ({y_lbl})", fontsize=12, color='white')
+    plt.title(f"DHO924S - XY (X=Ch{x_ch} [{x_lbl}], Y=Ch{y_ch} [{y_lbl}])", fontsize=14, color='white')
     plt.grid(True, alpha=0.3)
     plt.gca().set_aspect('auto')
     plt.tight_layout()
@@ -285,11 +311,13 @@ def plot_xy(i1, v2, filename="waveform_xy.png"):
     print(f"XY 그래프 저장: {filename}")
 
 
-def save_csv(time_arr, i1, v2, filename="waveform.csv"):
-    """Time, Ch1(A), Ch2(V) 3열 CSV 저장."""
-    data = np.column_stack((time_arr, i1, v2))
-    np.savetxt(filename, data, delimiter=',',
-               header='Time(s),Ch1(A),Ch2(V)', comments='')
+def save_csv(time_arr, channel_data, channel_units, filename="waveform.csv"):
+    """Time + 채널별 컬럼 CSV 저장."""
+    chs = sorted(channel_data.keys())
+    cols = [time_arr] + [channel_data[ch] for ch in chs]
+    data = np.column_stack(cols)
+    header = "Time(s)," + ",".join(f"Ch{ch}({channel_units[ch]})" for ch in chs)
+    np.savetxt(filename, data, delimiter=',', header=header, comments='')
     print(f"CSV 저장 완료: {filename} ({len(time_arr)} points)")
 
 
@@ -312,8 +340,8 @@ if __name__ == "__main__":
     inst.write("*CLS")
 
     try:
-        # --- 파형 데이터 캡처 (두 채널, STOP 상태 유지) ---
-        voltages = {}
+        # --- 파형 데이터 캡처 (모든 채널, STOP 상태 유지) ---
+        channel_data = {}
         time_arr = None
         for ch in CHANNELS:
             raw_data, params = capture_waveform(
@@ -325,33 +353,39 @@ if __name__ == "__main__":
                 stop=STOP_POINT
             )
             v = convert_to_voltage(raw_data, params)
-            voltages[ch] = v
+            channel_data[ch] = v
             if time_arr is None:
                 time_arr = generate_time_axis(len(v), params)
 
         # 길이 정합
-        n = min(len(voltages[1]), len(voltages[2]), len(time_arr))
-        v1 = voltages[1][:n]
-        v2 = voltages[2][:n]
+        n = min(min(len(d) for d in channel_data.values()), len(time_arr))
+        for ch in channel_data:
+            channel_data[ch] = channel_data[ch][:n]
         time_arr = time_arr[:n]
 
         print(f"\n--- 결과 요약 ---")
         print(f"  포인트 수 : {n}")
         print(f"  시간 범위 : {time_arr[0]:.6e} ~ {time_arr[-1]:.6e} s")
-        for label, v, unit in (("Ch1", v1, "A"), ("Ch2", v2, "V")):
-            print(f"  {label} : min={v.min():.6f}  max={v.max():.6f}  "
-                  f"mean={v.mean():.6f}  std={np.std(v, ddof=1):.6f} {unit}")
+        for ch in sorted(channel_data.keys()):
+            v = channel_data[ch]; u = CH_UNITS[ch]
+            print(f"  Ch{ch} : min={v.min():.6f}  max={v.max():.6f}  "
+                  f"mean={v.mean():.6f}  std={np.std(v, ddof=1):.6f} {u}")
 
         # --- 타임스탬프 기반 파일명 ---
         ts = datetime.now().strftime("%y%m%d_%H%M%S")
         csv_path = os.path.join(SAVE_DIR, f"{name}_{ts}.csv")
         png_path = os.path.join(SAVE_DIR, f"{name}_{ts}.png")
-        xy_path  = os.path.join(SAVE_DIR, f"{name}_{ts}_xy.png")
 
-        # --- CSV / 그래프 ---
-        save_csv(time_arr, v1, v2, filename=csv_path)
-        plot_waveform(time_arr, v1, v2, filename=png_path)
-        plot_xy(v1, v2, filename=xy_path)
+        # --- CSV / 시간 파형 ---
+        save_csv(time_arr, channel_data, CH_UNITS, filename=csv_path)
+        plot_waveform(time_arr, channel_data, CH_UNITS, filename=png_path)
+
+        # --- 채널 쌍별 XY 산점도 ---
+        for x_ch, y_ch in combinations(sorted(channel_data.keys()), 2):
+            xy_path = os.path.join(SAVE_DIR, f"{name}_{ts}_xy{x_ch}{y_ch}.png")
+            plot_xy(channel_data[x_ch], channel_data[y_ch],
+                    x_ch, y_ch, CH_UNITS[x_ch], CH_UNITS[y_ch],
+                    filename=xy_path)
 
         # --- (선택) 화면 캡처 ---
         # capture_screen(inst, "screenshot.png")
