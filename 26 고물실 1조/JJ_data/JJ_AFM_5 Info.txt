@@ -1,0 +1,42 @@
+-- Scan group --
+Image size	20µm
+Scan direction	Up
+Time/Line	1 s
+Points	256
+Lines	256
+X-Slope	0 °
+Y-Slope	0 °
+Rotation	0 °
+X-Pos	-2.37µm
+Y-Pos	-29.3µm
+Z-Plane	0 m
+Overscan	5 %
+Line mode	Standard
+Date	01-06-2026
+Time	23:11:32
+-- Feedback group --
+Setpoint	5nN
+P-Gain	0
+I-Gain	500
+D-Gain	0
+P-Gain2	0
+I-Gain2	1000
+D-Gain2	0
+Tip voltage	0 V
+Feedback mode	Free
+Feedback algo.	Standard PID
+Error range	20 V
+Ampl. Ctrl. mode	Const. Drive
+-- Global --
+Measurement environment	Air
+Op. mode	Static Force
+Cantilever type	Stat0.2LAuD
+Head type	LensAFM
+Scan head	49-19-069.hed
+Laser working point	0.0%
+Deflection offset	0.0%
+Software ver.	3.10.5.14
+Firmware ver.	3.10.5.14 (01.02.2024 11:30:58)
+Controller S/N	066-19-362
+-- Module --
+Nanosurf Report	10
