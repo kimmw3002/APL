@@ -1,0 +1,11 @@
+file,channel,pixel_nm,step_col_px,step_x_nm,row_band,step_height_nm,step_height_err_nm,step_height_sem_nm,width_10_90_nm,width_err_nm,width_sem_nm,n_rows,n_rows_total,note
+HeightSample_Contact_Left_remeasure.nid,Forward,195.3125,119,23242.2,bottom 25%,-87.947,4.158,0.541,1419.357,380.974,51.844,59,64,
+HeightSample_Contact_Left_remeasure.nid,Forward,195.3125,119,23242.2,top 25%,-84.980,5.154,0.644,1372.143,480.004,64.724,64,64,
+HeightSample_Contact_Right.nid,Forward,195.3125,82,16015.6,bottom 25%,87.124,4.635,0.579,1010.097,233.500,29.655,64,64,
+HeightSample_Contact_Right.nid,Forward,195.3125,82,16015.6,top 25%,83.718,4.802,0.605,886.038,140.496,17.562,63,64,
+HeightSample_Noncontact_Left.nid,Forward,97.6562,221,21582.0,bottom 25%,-40.506,29.478,2.702,3195.953,1529.283,146.479,119,128,high row scatter
+HeightSample_Noncontact_Left.nid,Forward,97.6562,221,21582.0,top 25%,-33.330,46.108,4.209,3615.432,2603.034,256.485,120,128,high row scatter
+HeightSample_Noncontact_Right.nid,Forward,97.6562,209,20410.2,bottom 25%,91.385,6.594,0.590,912.077,184.953,16.477,125,128,
+HeightSample_Noncontact_Right.nid,Forward,97.6562,209,20410.2,top 25%,93.643,9.155,0.816,915.160,184.146,17.478,126,128,
+HeightSample_contact_Left.nid,Forward,195.3125,120,23437.5,bottom 25%,-87.205,7.494,0.952,1324.853,413.062,58.416,62,64,
+HeightSample_contact_Left.nid,Forward,195.3125,120,23437.5,top 25%,-84.593,5.235,0.693,1124.657,250.907,34.465,57,64,
