@@ -93,20 +93,25 @@ def analyze(rel):
     right = detrend_rows(disp_right)
     segs = np.vstack([left, right])
 
-    # averaged periodogram (Welch), Hann window
+    # averaged periodogram (Welch), Hann window.
+    # The oscillation phase drifts line to line, so we average POWER across
+    # segments (incoherent average) and take sqrt at the end.
     win = np.hanning(nE)
-    wnorm = np.sum(win ** 2)
+    cg = np.sum(win)                  # coherent gain of the window (for amplitude)
     freq = np.fft.rfftfreq(nE, dt)
     P = np.zeros(len(freq))
     for row in segs:
-        P += (np.abs(np.fft.rfft(row * win)) ** 2) / wnorm
+        P += np.abs(np.fft.rfft(row * win)) ** 2
     P /= len(segs)
 
     # peak (skip DC bin), refined to sub-bin precision
     pk = np.argmax(P[1:]) + 1
     df = freq[1]
     f_peak = parabolic_peak(P, pk) * df
-    amp_spectrum = np.sqrt(P)         # nm-ish amplitude per bin
+    # Coherent-gain amplitude calibration: for a pure tone z=A*cos(2*pi*f0*t)
+    # the windowed rFFT peak is |X|=A/2*sum(win), so 2*|X|/sum(win) = A.
+    # -> peak of amp_spectrum is the physical peak amplitude A (nm) of the tone.
+    amp_spectrum = 2.0 * np.sqrt(P) / cg   # peak amplitude per bin (nm)
 
     return dict(rel=rel, label=label, lev=lev, disp_left=disp_left, disp_right=disp_right,
                 nE=nE, r0=r0, r1=r1, dt=dt, R=R, C=C,
@@ -155,7 +160,7 @@ def plot(res):
     ax[2].axvline(f_peak, color="r", ls="--", lw=1.0)
     ax[2].set_title(f"averaged spectrum (Welch, {res['nseg']} segments)")
     ax[2].set_xlabel("frequency (Hz)")
-    ax[2].set_ylabel("amplitude (a.u.)")
+    ax[2].set_ylabel("peak amplitude (nm)")
     ax[2].set_xlim(0, min(300, freq[-1]))
     ax[2].annotate(f"{f_peak:.1f} Hz",
                    xy=(f_peak, amp[res['pk']]),
