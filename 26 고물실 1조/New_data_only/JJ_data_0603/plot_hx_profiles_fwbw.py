@@ -28,7 +28,8 @@ from NSFopen.read import read                                      # noqa: E402
 from export_leveled import masked_polyfit                          # noqa: E402
 from measure_nid import pixel_nm                                   # noqa: E402
 from plot_hx_profiles import (CASES, SWATH, DEG, K, REX,           # noqa: E402
-                              sample_profile, analyze_profile)
+                              sample_profile, analyze_profile,
+                              PEAK_AXIS_FRAC)
 
 OUT_DIR = os.path.join(HERE, "hx_plots")
 MD_OUT = os.path.join(HERE, "fwbw_fw_vs_bw_analysis.md")
@@ -44,6 +45,14 @@ STYLES = {
     "Forward":  dict(color="#3366cc", label="Forward"),
     "Backward": dict(color="#d1452b", label="Backward"),
 }
+
+
+def nice_title(label):
+    """'short_C_new' -> 'Short Electrode, Contact Tip' (size + tip mode only)."""
+    parts = label.split("_")
+    size = "Tall" if parts[0] == "tall" else "Short"
+    tip = "Contact" if parts[1] == "C" else "Non-contact"
+    return f"{size} Electrode, {tip} Tip"
 
 
 def profile_for(afm, channel, px_x, px_y, x0, y0, x1, y1):
@@ -70,6 +79,8 @@ def main():
         sigma_px = px_x / math.sqrt(6.0)          # lateral pixel sigma on FWHM
 
         per_ch = {}
+        fwhms = []                    # for the peak-zoom x-window (centered at 0)
+        xspan = 0.0                   # max |distance-from-peak| present in the data
         fig, ax = plt.subplots(figsize=(7.0, 4.2))
         for channel in present:
             dist, prof, cnt = profile_for(afm, channel, px_x, px_y, x0, y0, x1, y1)
@@ -77,15 +88,23 @@ def main():
             per_ch[channel] = dict(A, sigma_px=sigma_px,
                                    fwhm_tot=math.hypot(A["fwhm_err"], sigma_px)
                                    if not math.isnan(A["fwhm_err"]) else float("nan"))
+            if not math.isnan(A["fwhm"]) and A["fwhm"] > 0:
+                fwhms.append(A["fwhm"])
+            rel = dist - A["center"]
+            xspan = max(xspan, abs(rel[0]), abs(rel[-1]))
             st = STYLES[channel]
-            ax.plot(dist - A["center"], prof, "-o", color=st["color"],
+            ax.plot(rel, prof, "-o", color=st["color"],
                     lw=1.0, ms=2.5, label=st["label"])
+
+        # zoom so the ~2*FWHM peak fills ~PEAK_AXIS_FRAC of the (symmetric) axis
+        if fwhms:
+            half = min(xspan, max(fwhms) / PEAK_AXIS_FRAC)
+            ax.set_xlim(-half, half)
 
         ax.axvline(0, color="0.6", lw=0.8, ls="--", zorder=0)
         ax.set_xlabel("distance from peak (nm)")
         ax.set_ylabel("height (nm)")
-        ax.set_title(f"{label}   |   {os.path.basename(nid_rel)}   |   "
-                     f"px={px_x:.2f} nm,  swath={SWATH}px aligned (center-aligned)")
+        ax.set_title(nice_title(label))
         ax.grid(True, alpha=0.25)
         ax.legend(frameon=False)
         fig.tight_layout()

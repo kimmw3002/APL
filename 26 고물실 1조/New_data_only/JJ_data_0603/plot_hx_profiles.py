@@ -31,6 +31,9 @@ from NSFopen.read import read                  # noqa: E402
 from export_leveled import masked_polyfit       # noqa: E402
 from measure_nid import pixel_nm                # noqa: E402
 
+# fraction of the x-axis the peak feature (~2*FWHM bump) should occupy
+PEAK_AXIS_FRAC = 0.70
+
 OUT_DIR = os.path.join(HERE, "hx_plots")
 
 # label, nid (repo-relative), channel, x0, y0, x1, y1   (coords as exported to CSV)
@@ -47,6 +50,14 @@ CASES = [
 
 SWATH = 21          # swath_px from the CSV (all rows)
 DEG, K, REX = 2, 2.5, 0.0   # interactive tool defaults (CSV stores no leveling params)
+
+
+def nice_title(label):
+    """'short_C_new' -> 'Short Electrode, Contact Tip' (size + tip mode only)."""
+    parts = label.split("_")
+    size = "Tall" if parts[0] == "tall" else "Short"
+    tip = "Contact" if parts[1] == "C" else "Non-contact"
+    return f"{size} Electrode, {tip} Tip"
 
 
 def bilinear(grid, c, r):
@@ -197,6 +208,17 @@ def analyze_profile(dist, prof, peak_avg_n, fwhm_band_sigma=1.0, basefrac=0.25):
                 peak_avg_count=len(avg_idx))
 
 
+def peak_xlim(dist, center, fwhm):
+    """x-limits centered on `center` so the ~2*FWHM peak fills PEAK_AXIS_FRAC
+    of the axis. Falls back to the full data range when FWHM is unavailable,
+    and clips to the data extent so we never pad past the measured profile."""
+    lo_data, hi_data = float(dist[0]), float(dist[-1])
+    if fwhm is None or (isinstance(fwhm, float) and math.isnan(fwhm)) or fwhm <= 0:
+        return lo_data, hi_data
+    half = fwhm / PEAK_AXIS_FRAC          # half-window: 2*FWHM bump -> ~70%
+    return max(lo_data, center - half), min(hi_data, center + half)
+
+
 def estimate_height(dist, prof, frac=0.25):
     """Sloped-baseline peak-minus-baseline height, for a CSV sanity check only
     (not plotted). Mirrors the auto-baseline path in measure_nid.analyze()."""
@@ -226,6 +248,7 @@ def main():
 
         dist, prof, cnt = sample_profile(lev, px_x, px_y, x0, y0, x1, y1, SWATH)
         height = estimate_height(dist, prof)
+        A = analyze_profile(dist, prof, peak_avg_n=2)
 
         print(f"{label:14s} {os.path.basename(nid_rel):40s} {px_x:7.2f} {len(prof):4d} "
               f"{cnt.min():2d}/{int(np.median(cnt)):2d}/{cnt.max():2d}{'':>8s} {height:10.2f}")
@@ -233,10 +256,10 @@ def main():
         # ---- plot: h(x) only (line + small markers, single color) ----
         fig, ax = plt.subplots(figsize=(7.0, 4.2))
         ax.plot(dist, prof, "-o", color="#3366cc", lw=1.0, ms=2.5, zorder=2)
+        ax.set_xlim(*peak_xlim(dist, A["center"], A["fwhm"]))
         ax.set_xlabel("distance (nm)")
         ax.set_ylabel("height (nm)")
-        ax.set_title(f"{label}   |   {os.path.basename(nid_rel)}   |   "
-                     f"px={px_x:.2f} nm,  swath={SWATH}px aligned")
+        ax.set_title(nice_title(label))
         ax.grid(True, alpha=0.25)
         fig.tight_layout()
         out = os.path.join(OUT_DIR, f"hx_{idx}_{label}.png")
