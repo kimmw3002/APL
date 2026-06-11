@@ -1,0 +1,47 @@
+{
+  // LaTeX Workshop (James-Yu.latex-workshop) compile configuration.
+  // Default recipe runs the full pdflatex -> bibtex -> pdflatex x2 sequence.
+  "latex-workshop.latex.tools": [
+    {
+      "name": "pdflatex",
+      "command": "pdflatex",
+      "args": [
+        "-synctex=1",
+        "-interaction=nonstopmode",
+        "-file-line-error",
+        "%DOC%"
+      ],
+      "env": {}
+    },
+    {
+      "name": "bibtex",
+      "command": "bibtex",
+      "args": ["%DOCFILE%"],
+      "env": {}
+    }
+  ],
+  "latex-workshop.latex.recipes": [
+    {
+      "name": "pdflatex -> bibtex -> pdflatex x2",
+      "tools": ["pdflatex", "bibtex", "pdflatex", "pdflatex"]
+    },
+    {
+      "name": "pdflatex (single pass)",
+      "tools": ["pdflatex"]
+    }
+  ],
+  "latex-workshop.latex.recipe.default": "first",
+
+  // Clean up build leftovers (these are also gitignored under reports/.gitignore).
+  "latex-workshop.latex.autoClean.run": "onSucceeded",
+  "latex-workshop.latex.clean.fileTypes": [
+    "*.aux", "*.bbl", "*.blg", "*.bcf", "*.run.xml",
+    "*.log", "*.out", "*.toc", "*.lof", "*.lot",
+    "*.fls", "*.fdb_latexmk", "*.synctex.gz",
+    "*Notes.bib", "apssamp.bib"
+  ],
+
+  // Build on save; keep the generated .pdf next to the .tex.
+  "latex-workshop.latex.autoBuild.run": "onSave",
+  "latex-workshop.latex.outDir": "%DIR%"
+}

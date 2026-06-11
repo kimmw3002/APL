@@ -1,0 +1,146 @@
+% Bibliography database embedded directly in this .tex file.
+% The filecontents environment writes apssamp.bib at compile time, so no
+% external .bib file is needed. Edit the entries below to manage references.
+% (Example entries -- replace with your own as needed.)
+\begin{filecontents}[overwrite]{apssamp.bib}
+@article{example2024,
+  author  = {J. Doe and A. Smith},
+  title   = {An example reference for the bibliography},
+  journal = {Phys. Rev. Lett.},
+  volume  = {132},
+  pages   = {010101},
+  year    = {2024},
+  doi     = {10.1103/PhysRevLett.132.010101},
+}
+\end{filecontents}
+% ****** Start of file apssamp.tex ******
+%
+%   This file is part of the APS files in the REVTeX 4.2 distribution.
+%   Version 4.2a of REVTeX, December 2014
+%
+%   Copyright (c) 2014 The American Physical Society.
+%
+%   See the REVTeX 4 README file for restrictions and more information.
+%
+% TeX'ing this file requires that you have AMS-LaTeX 2.0 installed
+% as well as the rest of the prerequisites for REVTeX 4.2
+%
+% See the REVTeX 4 README file
+% It also requires running BibTeX. The commands are as follows:
+%
+%  1)  latex apssamp.tex
+%  2)  bibtex apssamp
+%  3)  latex apssamp.tex
+%  4)  latex apssamp.tex
+%
+\documentclass[%
+ reprint,
+%superscriptaddress,
+%groupedaddress,
+%unsortedaddress,
+%runinaddress,
+%frontmatterverbose, 
+%preprint,
+%preprintnumbers,
+%nofootinbib,
+%nobibnotes,
+%bibnotes,
+ amsmath,amssymb,
+ aps,
+%pra,
+%prb,
+%rmp,
+%prstab,
+%prstper,
+%floatfix,
+]{revtex4-2}
+
+\usepackage{graphicx}% Include figure files
+\usepackage{dcolumn}% Align table columns on decimal point
+\usepackage{bm}% bold math
+\usepackage{float}
+%\usepackage{hyperref}% add hypertext capabilities
+%\usepackage[mathlines]{lineno}% Enable numbering of text and display math
+%\linenumbers\relax % Commence numbering lines
+
+%\usepackage[showframe,%Uncomment any one of the following lines to test 
+%%scale=0.7, marginratio={1:1, 2:3}, ignoreall,% default settings
+%%text={7in,10in},centering,
+%%margin=1.5in,
+%%total={6.5in,8.75in}, top=1.2in, left=0.9in, includefoot,
+%%height=10in,a5paper,hmargin={3cm,0.8in},
+%]{geometry}
+
+\begin{document}
+
+\preprint{APS/123-QED}
+
+\title{LensAFM}
+
+\author{Minwoo Kim (Team 1)}
+
+\date{\today}% It is always \today, today,
+             %  but any date may be explicitly specified
+
+\begin{abstract}
+An article usually includes an abstract, a concise summary of the work
+covered at length in the main body of the article. 
+\end{abstract}
+
+\maketitle
+
+%\tableofcontents
+
+\section{\label{sec:level1}Section 1}
+
+This is section \ref{sec:level1}. Cite like this \cite{example2024}.
+
+\subsection{Subsection}
+
+\subsubsection{Subsubsection}
+
+\section{Figures and Tables}
+
+Use the \texttt{figure} environment for a figure, the \texttt{table} environment for a table.
+\begin{figure}[H]
+\centering
+\includegraphics[width=.7\linewidth]{images/C_short_leveled}
+\caption{Caption}
+\end{figure}
+
+In PRL/REV\TeX\ style the caption sits \emph{above} the table, and the
+\texttt{ruledtabular} environment draws the top/bottom Scotch rules with a
+\texttt{\textbackslash colrule} under the header. See Table~\ref{tab:sample}.
+\begin{table}[H]
+\caption{\label{tab:sample}%
+Measured rod height and FWHM for the Contact (C) and Non-contact (NC) tips.}
+\begin{ruledtabular}
+\begin{tabular}{lcc}
+Tip & Height (nm) & FWHM (nm) \\
+\colrule
+Contact     & $67.6 \pm 1.2$ & $148 \pm 6$ \\
+Non-contact & $52.3 \pm 0.9$ & $131 \pm 5$ \\
+\end{tabular}
+\end{ruledtabular}
+\end{table}
+
+\begin{acknowledgments}
+Talk about LLM assistance.
+\end{acknowledgments}
+
+\appendix
+
+\section{Author Contributions}
+\begin{itemize}
+    \item Minwoo Kim: Wrote this report. Also, ...
+    \item Heemin Kim: ...
+    \item Seokhun Oh: ...
+    \item Chihun Choi: ...
+\end{itemize}
+
+
+\bibliography{apssamp}% Produces the bibliography via BibTeX.
+
+\end{document}
+%
+% ****** End of file apssamp.tex ******

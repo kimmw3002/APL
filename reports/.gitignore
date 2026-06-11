@@ -1,0 +1,28 @@
+# LaTeX build leftovers (keep .pdf and .tex tracked)
+*.aux
+*.log
+*.bbl
+*.blg
+*.out
+*.toc
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.synctex(busy)
+*.bcf
+*.run.xml
+*.dvi
+*.xdv
+*.nav
+*.snm
+*.vrb
+*.idx
+*.ind
+*.ilg
+*.spl
+
+# Auto-generated bib files (the bibliography lives inside the .tex via filecontents)
+apssamp.bib
+*Notes.bib
